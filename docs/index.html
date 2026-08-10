@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Trafic aérien en direct - France</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <style>
+    body { margin: 0; }
+    #map { height: 100vh; }
+    #info {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: sans-serif;
+      font-size: 13px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="info">Chargement...</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([46.6, 2.5], 6); // center France 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let flightLayer = null;
+
+    function planeIcon(heading) {
+      return L.divIcon({
+        html: `<div style="transform: rotate(${heading}deg); font-size: 20px;">✈️</div>`,
+        className: '',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+    }
+
+    function loadFlights() {
+      fetch('data/flights.geojson?t=' + Date.now()) // avoid browser's cache
+        .then(response => response.json())
+        .then(data => {
+          if (flightLayer) {
+            map.removeLayer(flightLayer); // remove any previous layer before drawing
+          }
+
+          flightLayer = L.geoJSON(data, {
+            pointToLayer: (feature, latlng) => {
+              const heading = feature.properties.heading || 0;
+              return L.marker(latlng, { icon: planeIcon(heading) });
+            },
+            onEachFeature: (feature, layer) => {
+              const p = feature.properties;
+              layer.bindPopup(`
+                <strong>${p.callsign || 'Sans indicatif'}</strong><br>
+                Pays: ${p.origin_country}<br>
+                Altitude: ${p.altitude_m ? Math.round(p.altitude_m) + ' m' : 'N/A'}<br>
+                Vitesse: ${p.velocity_ms ? Math.round(p.velocity_ms * 3.6) + ' km/h' : 'N/A'}
+              `);
+            }
+          }).addTo(map);
+
+          document.getElementById('info').innerHTML =
+            `${data.features.length} planes · update : ${new Date(data.generated_at).toLocaleTimeString('fr-FR')}`;
+        })
+        .catch(err => {
+          document.getElementById('info').innerHTML = 'Loading error';
+          console.error(err);
+        });
+    }
+
+    loadFlights(); // First load
+    setInterval(loadFlights, 60000); // refresh every 60 sec but the geojson will be refreshed through the Action every 10 min
+  </script>
+</body>
+</html>
