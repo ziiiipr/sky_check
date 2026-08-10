@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from datetime import datetime, timezone
 
 BBOX = {"lamin": 41, "lomin": -5, "lamax": 51, "lomax": 10}  # France
@@ -34,6 +35,11 @@ geojson = {
     "generated_at": datetime.now(timezone.utc).isoformat(),
     "features": features
 }
+
+os.makedirs("docs/data", exist_ok=True)
+
+with open("docs/data/flights.geojson", "w", encoding="utf-8") as f:
+    json.dump(geojson, f, ensure_ascii=False)
 
 with open("docs/data/flights.geojson", "w", encoding="utf-8") as f:
     json.dump(geojson, f, ensure_ascii=False)
