@@ -61,9 +61,9 @@
               const p = feature.properties;
               layer.bindPopup(`
                 <strong>${p.callsign || 'Sans indicatif'}</strong><br>
-                Pays: ${p.origin_country}<br>
+                Country: ${p.origin_country}<br>
                 Altitude: ${p.altitude_m ? Math.round(p.altitude_m) + ' m' : 'N/A'}<br>
-                Vitesse: ${p.velocity_ms ? Math.round(p.velocity_ms * 3.6) + ' km/h' : 'N/A'}
+                Speed: ${p.velocity_ms ? Math.round(p.velocity_ms * 3.6) + ' km/h' : 'N/A'}
               `);
             }
           }).addTo(map);
